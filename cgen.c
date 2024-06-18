@@ -58,6 +58,3 @@ void yyerror(char const *pat, ...) {
 
 int yyerror_count = 0;
 
-const char *c_prologue =
-    "#include \"lambdalib.h\"\n"
-    "\n";

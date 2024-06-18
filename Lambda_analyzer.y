@@ -6,47 +6,10 @@
     #include <string.h>
     #include <stdlib.h>
 
-    external int yylex(void);
-    external int lineNum;
+    extern int yylex(void);
+    extern int line_num;
 
-    /* Opens a memory stream that writes to a dynamically allocated buffer. 
-       to build strings in memory. */
-
-    // https://stackoverflow.com/questions/3481157/string-stream-in-c
-    void ssopen( sstream* sst ){
-        sst -> stream = open_memstream( & sst -> buffer , & sst -> buffsize);
-    }
-
-    // Returns the current contents of the memory buffer as a string.
-    char* ssvalue(sstream* sst)
-    {
-        fflush( sst -> stream );
-        return  sst -> buffer;
-    }
-
-    // closes stream
-    void ssclose(sstream* sst)
-    {
-        fclose( sst -> stream );
-    }
-
-    char* cmap(const char* pat, ...)
-    {
-        sstream S;
-        ssopen(&S);
-
-        // handle the arguments: 
-        // https://en.cppreference.com/w/cpp/utility/variadic/va_list
-        va_list arg;
-        va_start(arg, pat);
-        vfprintf(S.stream, pat, arg );
-        va_end(arg);
-
-        char* ret = ssvalue(&S);
-        ssclose(&S);
-        return ret;
-    }
-    const char* c_libs = 
+    const char* c_prologue = 
     "#include \"fclib.h\"\n#include \"math.h\"\n#include <stdio.h>\n"
     "\n"
     ;
@@ -71,12 +34,12 @@
 
 %token KW_MAIN
 
-%token KW_INTEGER 
-%token KW_SCALAR
-%token KW_STR
-%token KW_BOOL
-%token KW_TRUE
-%token KW_FALSE
+%token <strng> KW_INTEGER 
+%token <strng> KW_SCALAR 
+%token <strng> KW_STR
+%token <strng> KW_BOOL
+%token <strng> KW_TRUE
+%token <strng> KW_FALSE
 %token KW_CONST
 %token KW_IF
 %token KW_ELSE
@@ -87,45 +50,17 @@
 %token KW_WHILE
 %token KW_ENDWHILE
 %token KW_BREAK
+%token KW_RETURN
 %token KW_CONTINUE
 %token KW_AND
 %token KW_OR
+%token KW_COMP
 %token KW_ENDCOMP
 %token KW_OF
 
 %token KW_DEF
 %token KW_ENDDEF
-
-%token EQ
-%token LEQ
-%token GEQ
-%token NEQ
-%token LAND
-%token LOR
-
-%token MOD
-%token POW
-
-%token ADD_ASSIGN;
-%token SUB_ASSIGN;
-%token MULT_ASSIGN;
-%token DIV_ASSIGN;
-%token MOD_ASSIGN;
-%token ASSIGN;
 // ----------------------
-
-
-%right ADD_ASSIGN SUB_ASSIGN MULT_ASSIGN DIV_ASSIGN MOD_ASSIGN ASSIGN '='
-%left KW_OR
-%left KW_AND
-%right '!'
-%left NEQ EQ
-%left LEQ GEQ '<' '>'
-%left '*' '/' MOD
-%left '-' '+'
-%right POW
-%left '.' '(' ')' '[' ']'
-
 
 %start input
 
@@ -134,6 +69,7 @@
 
 // ========= MAIN =========
 %type <strng> s_main_s
+%type <strng> main_body
 %type <strng> pdeclare
 
 // declartaions
@@ -144,18 +80,17 @@
 
 // ========================
 
+%type <strng> data_type
 %type <strng> brackets
 %type <strng> basic_data_type
 %type <strng> composite_data_type
-%type <strng> identifier
 
 // functions
 %type <strng> function_header
-%type <strng> function_header_contents
+//%type <strng> function_header_contents //TODO?
 %type <strng> function_body
-%type <strng> treturn
-%type <strng> function_body_contents
-%type <strng> function_attribute
+//%type <strng> function_body_contents //TODO?
+%type <strng> function_arg
 
 // expressions
 %type <strng> expression
@@ -168,107 +103,204 @@
 %type <strng> if_statement
 %type <strng> for_statement
 %type <strng> while_statement
-%type <strng> do_while_statement
+%type <strng> compound_array_i
+%type <strng> compound_array_a
+%type <strng> variable_assignement
 
+%right ADD_ASSIGN SUB_ASSIGN MULT_ASSIGN DIV_ASSIGN MOD_ASSIGN ASSIGN '='
+%left KW_OR LOR
+%left KW_AND LAND
+%right '!' KW_NOT
+%left NEQ EQ
+%left LEQ GEQ '<' '>'
+%left '*' '/' MOD KW_MOD
+%left '-' '+'
+%right POW
+%left '.' '(' ')' '[' ']'
 
 
 %%
 
-input : PROGRAM_START {puts(c_libs);};
+input : PROGRAM_START {puts(c_prologue);};
 
-PROGRAM_START: pdeclare {$$ = cmap("%s",$1);};
+PROGRAM_START: pdeclare {$$ = template("%s",$1);};
 
-pdeclare:       s_main_s {$$ = cmap("%s",$1);}
-              | constant_declaration s_main_s{$$ = cmap("%s\n%s",$1,$2);}
-              | constant_declaration composite_declaration s_main_s {$$ = cmap("%s\n%s\n%s",$1,$2,$3);}
-              | constant_declaration composite_declaration function_declaration s_main_s{$$ = cmap("%s\n%s\n%s\n%s",$1,$2,$3,$4);}
-              | constant_declaration composite_declaration function_declaration variable_declaration s_main_s{$$ = cmap("%s\n%s\n%s\n%s\n%s",$1,$2,$3,$4,$5);}
+pdeclare:       s_main_s {$$ = template("%s",$1);}
+              | constant_declaration s_main_s{$$ = template("%s\n%s",$1,$2);}
+              | constant_declaration composite_declaration s_main_s {$$ = template("%s\n%s\n%s",$1,$2,$3);}
+              | constant_declaration composite_declaration function_declaration s_main_s{$$ = template("%s\n%s\n%s\n%s",$1,$2,$3,$4);}
+              | constant_declaration composite_declaration function_declaration variable_declaration s_main_s{$$ = template("%s\n%s\n%s\n%s\n%s",$1,$2,$3,$4,$5);}
+              //TODO more generalized
               ;
 
+// <<<<<<<<<<<<<<<<<<<<<<<<< MAIN >>>>>>>>>>>>>>>>>>>>>>>>>>>>
+s_main_s: KW_DEF KW_MAIN '('')' main_body KW_ENDDEF {$$ = template("int main(){\n%s\n}",$5);};
 
-s_main_s: KW_DEF KW_MAIN '('')' function_body KW_ENDDEF {$$ = cmap("int main(){\n%s\n}",$5);};
+main_body: commands {$$ = $1;};
 
-constant_declaration:
+// -----------------------------------------------------------
 
-composite_declaration:
+constant_declaration: KW_CONST TK_IDENTIFIER '=' TK_NUMBER  ':' KW_INTEGER {$$ = template("const int %s = %s;\n;",$2,$4);}
+                    | KW_CONST TK_IDENTIFIER '=' TK_DECIMAL ':' KW_SCALAR  {$$ = template("const double %s = %s;\n;",$2,$4);}
+                    | KW_CONST TK_IDENTIFIER '=' TK_STRING  ':' KW_STR     {$$ = template("const StringType %s = %s;\n;",$2,$4);}
+                    | KW_CONST TK_IDENTIFIER '=' KW_TRUE    ':' KW_BOOL    {$$ = template("const int %s = 1;\n;",$2);}
+                    | KW_CONST TK_IDENTIFIER '=' KW_FALSE   ':' KW_BOOL    {$$ = template("const int %s = 0;\n;",$2);}
+                    ;
 
-function_declaration:
+composite_declaration: KW_COMP {$$ = template(";\n");};//TODO
 
-variable_declaration: 
+function_declaration: KW_DEF function_header function_body KW_ENDDEF {$$ = template("%s{\n%s\n}\n",$2,$3);};//TODO?
 
-basic_data_type : KW_INTEGER {$$ = cmap("int");}
-                | KW_BOOL    {$$ = cmap("int");}
-                | KW_SCALAR  {$$ = cmap("double");}
-                | KW_STR     {$$ = cmap("char*");}
+variable_declaration: TK_IDENTIFIER ':' data_type ';' {$$ = template("%s %s;\n" ,$3,$1);}
+                    | TK_IDENTIFIER ':' data_type ',' variable_declaration {$$ = template("%s %s;\n%s");}
+                    ;
+
+// ^^^^^^^^^^^^^^^^^^^^^^^ DATA TYPES ^^^^^^^^^^^^^^^^^^^^^^^
+
+data_type : basic_data_type     {$$ = $1;}
+          | composite_data_type {$$ = $1;}
+          ;
+
+basic_data_type : KW_INTEGER {$$ = template("int");}
+                | KW_BOOL    {$$ = template("int");}
+                | KW_SCALAR  {$$ = template("double");}
+                | KW_STR     {$$ = template("StringType");}
                 ;
 
-composite_data_type: //TODO 
+composite_data_type: KW_COMP TK_IDENTIFIER  {$$ = template(";\n");};//TODO
 ;
 
 // ----------------------------- expressions -----------------------------
 expression:
-  TK_NUMBER                                 {$$ = cmap("%s", $1);}
-| TK_REAL                                   {$$ = cmap("%s", $1);}
-| TK_CHAR                                   {$$ = cmap("%s", $1);}
-| TK_STRING                                 {$$ = cmap("%s", $1);}
-| TK_DIGIT                                  {$$ = cmap("%s", $1);}
-| TK_DECIMAL                                {$$ = cmap("%s", $1);}
-| TK_IDENTIFIER                             {$$ = cmap("%s", $1);}
-| TK_IDENTIFIER '(' function_attribute ')'  {$$ = cmap("%s(%s)", $1, $3);}
-| TK_IDENTIFIER '(' ')'                     {$$ = cmap("%s()", $1);}
-| TK_IDENTIFIER brackets                    {$$ = cmap("%s%s", $1, $2);}
-| KW_TRUE                                   {$$ = cmap("1");}
-| KW_FALSE                                  {$$ = cmap("0");}
-| '(' expression ')'                        {$$ = cmap("(%s)",$2);}
-| composite_data_type '.' expression        {$$ = cmap("%s.%s", $1,$3);}
-| math_expression                           {$$ = $1}
-| logical_expression                        {$$ = $1}
-| '+' expression                            {$$ = cmap("+%s", $2);}
-| '-' expression                            {$$ = cmap("-%s", $2);}
+  TK_NUMBER                                 {$$ = template("%s", $1);}
+| TK_REAL                                   {$$ = template("%s", $1);}
+| TK_CHAR                                   {$$ = template("%s", $1);}
+| TK_STRING                                 {$$ = template("%s", $1);}
+| TK_DIGIT                                  {$$ = template("%s", $1);}
+| TK_DECIMAL                                {$$ = template("%s", $1);}
+| TK_IDENTIFIER                             {$$ = template("%s", $1);}
+| TK_IDENTIFIER '(' function_arg ')'        {$$ = template("%s(%s)", $1, $3);}
+| TK_IDENTIFIER '(' ')'                     {$$ = template("%s()", $1);}
+| TK_IDENTIFIER brackets                    {$$ = template("%s%s", $1, $2);}
+| KW_TRUE                                   {$$ = template("1");}
+| KW_FALSE                                  {$$ = template("0");}
+| '(' expression ')'                        {$$ = template("(%s)",$2);}
+| composite_data_type '.' expression        {$$ = template("%s.%s", $1,$3);}
+| math_expression                           {$$ = $1;}
+| logical_expression                        {$$ = $1;}
+| '+' expression                            {$$ = template("+%s", $2);}
+| '-' expression                            {$$ = template("-%s", $2);}
 ;
 
 math_expression:
-  expression POW expression         {$$ = cmap("pow(%s,%s)", $1,$3);}
-| expression '+' expression         {$$ = cmap("%s+%s", $1,$3);}
-| expression '-' expression         {$$ = cmap("%s-%s", $1,$3);}
-| expression '*' expression         {$$ = cmap("%s*%s", $1,$3);}
-| expression '/' expression         {$$ = cmap("%s/%s", $1,$3);}
-| expression MOD expression         {$$ = cmap("%s %% %s", $1,$3);}
+  expression POW expression         {$$ = template("pow(%s,%s)", $1,$3);}
+| expression '+' expression         {$$ = template("%s+%s", $1,$3);}
+| expression '-' expression         {$$ = template("%s-%s", $1,$3);}
+| expression '*' expression         {$$ = template("%s*%s", $1,$3);}
+| expression '/' expression         {$$ = template("%s/%s", $1,$3);}
+| expression MOD expression         {$$ = template("%s %% %s", $1,$3);}
+| expression KW_MOD expression      {$$ = template("%s %% %s", $1,$3);}
 ;
 
 logical_expression:
-  expression EQ expression          {$$ = cmap("%s==%s"),$1,$3}
-| expression LEQ expression         {$$ = cmap("%s<=%s"),$1,$3}
-| expression GEQ expression         {$$ = cmap("%s>=%s"),$1,$3}
-| expression NEQ expression         {$$ = cmap("%s!=%s"),$1,$3}
-| expression '<' expression         {$$ = cmap("%s<%s"),$1,$3}
-| expression '>' expression         {$$ = cmap("%s>%s"),$1,$3}
-| expression LAND expression        {$$ = cmap("%s && %s"),$1,$3}
-| expression LOR expression         {$$ = cmap("%s || %s"),$1,$3}
-| '!' expression                    {$$ = cmap("!%s"),$2}
-
-
+  expression EQ expression          {$$ = template("%s==%s",$1,$3);}
+| expression LEQ expression         {$$ = template("%s<=%s",$1,$3);}
+| expression GEQ expression         {$$ = template("%s>=%s",$1,$3);}
+| expression NEQ expression         {$$ = template("%s!=%s",$1,$3);}
+| expression '<' expression         {$$ = template("%s<%s",$1,$3);}
+| expression '>' expression         {$$ = template("%s>%s",$1,$3);}
+| expression LAND expression        {$$ = template("%s && %s",$1,$3);}
+| expression KW_AND expression      {$$ = template("%s && %s",$1,$3);}
+| expression LOR expression         {$$ = template("%s || %s",$1,$3);}
+| expression KW_OR expression       {$$ = template("%s || %s",$1,$3);}
+| '!' expression                    {$$ = template("!%s",$2);}
+| KW_NOT expression                 {$$ = template("!%s",$2);}
 ;
 // -----------------------------------------------------------------------
 
-// array brackets for arrays or matrices
-brackets : '[' expression ']'           {$$ = cmap( "[%s]", $2);}
-         | brackets '[' expression ']'  {$$ = cmap( "%s[%s]", $1, $3);}
-;
+// array and elements for arrays or matrices
+brackets : '[' expression ']'           {$$ = template( "[%s]", $2);}
+         | brackets '[' expression ']'  {$$ = template( "%s[%s]", $1, $3);}
+         ;  
 
 
 
-// commands
-commands: command commands {$$ = cmap("%s\n%s\n", $1,$2);}
+
+// ********************* commands (statements) *********************
+
+commands: command commands {$$ = template("%s\n%s\n", $1,$2);}
         | command          {$$ = $1;}
+        ;
+
+command: 
+  ';'   {$$ = template(";");}
+| variable_assignement                      {$$ = $1;}
+| TK_IDENTIFIER brackets '=' expression ';' {$$ = template("%s%s = %s;\n",$1,$2,$4);}
+| if_statement ';'                          {$$ = template("%s;\n",$1);}
+| for_statement ';'                         {$$ = template("%s;\n",$1);}                   
+| compound_array_i ';'                      {$$ = template("%s;\n",$1);}
+| compound_array_a ';'                      {$$ = template("%s;\n",$1);}
+| while_statement ';'                       {$$ = template("%s;\n",$1);}
+| KW_BREAK ';'                              {$$ = template("break;");}
+| KW_CONTINUE ';'                           {$$ = template("continue;");}
+| KW_RETURN ';'                             {$$ = template("return;");}
+| KW_RETURN expression ';'                  {$$ = template("return %s;",$2);}
+| TK_IDENTIFIER '(' function_arg ')' ';'    {$$ = template("%s(%s);\n",$1,$3);}
+| TK_IDENTIFIER '(' ')' ';'                 {$$ = template("%s()\n",$1);}
+| TK_IDENTIFIER ADD_ASSIGN TK_IDENTIFIER ';'      {$$ = template("%s += %s;\n",$1,$3);}
+| TK_IDENTIFIER SUB_ASSIGN TK_IDENTIFIER ';'      {$$ = template("%s -= %s;\n",$1,$3);}
+| TK_IDENTIFIER MULT_ASSIGN TK_IDENTIFIER ';'     {$$ = template("%s *= %s;\n",$1,$3);}
+| TK_IDENTIFIER DIV_ASSIGN TK_IDENTIFIER ';'      {$$ = template("%s /= %s;\n",$1,$3);}
+| TK_IDENTIFIER MOD_ASSIGN TK_IDENTIFIER ';'      {$$ = template("%s %%= %s;\n",$1,$3);}
+// TODO?| KW_CONST TK_IDENTIFIER '=' 
 ;
 
-command: ';'        {$$ = cmap(";");}
+
+variable_assignement: TK_IDENTIFIER '=' expression ';' {$$ = template("%s = %s;\n",$1,$3);};
+
+
+if_statement: KW_IF '(' logical_expression ')' ':' commands KW_ENDIF {$$ = template("if(%s){\n%s\n}\n",$3,$6);}
+            | KW_IF '(' logical_expression ')' ':' commands KW_ELSE ':' commands KW_ENDIF {$$ = template("if(%s){\n%s\n} else{\n%s\n}\n",$3,$6,$9);}
+            ;
+
+//                $1         $2      $3   $4     $5     $6      $7    $8     $9     $10   $11       $12
+//               for     (int) i     in    [    start    :     stop    :    step     ]  commands   endfor;     (default step = 1)
+for_statement: KW_FOR TK_IDENTIFIER KW_IN '[' TK_NUMBER ':' TK_NUMBER ']' commands KW_ENDFOR {$$ = template("for(%s = %s; %s <= %s; %s++){\n%s\n}\n" ,$2,$5,$2,$7,$2,$9);}
+             | KW_FOR TK_IDENTIFIER KW_IN '[' TK_NUMBER ':' TK_NUMBER ':' TK_NUMBER ']' commands KW_ENDFOR {$$ = template("for(%s = %s; %s <= %s; %s+=%s){\n%s\n}\n" ,$2,$5,$2,$7,$2,$9,$11);}
+             ;
+
+//                COMPOUND ARRAY ON ARRAY VALUES
+
+
+
+compound_array_a: TK_IDENTIFIER ASSIGN '[' ']' {$$ = template(";\n");};//TODO
+
+
+//                 COMPOUND ARRAY ON INTEGER VALUES
+//                    $1        $2     $3     $4         $5        $6      $7      $8    $9  $10    $11
+//                  my_array    :=      [ expression    for      element    :  (int) size ]   :     type;
+compound_array_i: TK_IDENTIFIER ASSIGN '[' expression KW_FOR TK_IDENTIFIER ':' TK_NUMBER ']' ':' data_type {$$ = template("%s* %s = (%s*)malloc(%s * sizeof(%s));\nfor(int %s = 0; %s < %s; ++%s){\n%s[%s] = %s;\n}\n",$11,$1,$11,$8,$11,$6,$6,$8,$6,$1,$6,$4);};
+
+while_statement: KW_WHILE '(' logical_expression ')' commands KW_ENDWHILE {$$ = template("while(%s){\n%s\n}\n",$3,$5);};
+
+// ==================================== functions ====================================
+
+function_arg: expression {$$ = $1;}
+| function_arg ',' expression {$$ = template( "%s, %s", $1, $3);}
+;
+
+
+function_header: TK_IDENTIFIER '(' function_arg ')' '-''>' data_type {$$ = template("%s %s(%s)",$7,$1,$3);};//TODO?
+function_body: commands {$$ = template("%s\n",$1);};//TODO?
+
+
+
+
 
 
 %%
 int main () {
-  if ( yyparse() == 0 )
-    printf("Accepted!\n");
-  
+  if ( yyparse() == 1 ) {
+    printf("Rejected!\n");
+  }
 }
