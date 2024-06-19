@@ -54,8 +54,6 @@
 %token KW_CONTINUE
 %token KW_AND
 %token KW_OR
-%token KW_COMP
-%token KW_ENDCOMP
 %token KW_OF
 
 %token KW_DEF
@@ -65,7 +63,7 @@
 %start input
 
 %type <strng> PROGRAM_START
-
+%type <strng> code
 
 // ========= MAIN =========
 %type <strng> s_main_s
@@ -73,7 +71,6 @@
 %type <strng> pdeclare
 
 // declartaions
-%type <strng> composite_declaration
 %type <strng> constant_declaration
 %type <strng> function_declaration
 %type <strng> variable_declaration
@@ -82,8 +79,7 @@
 
 %type <strng> data_type
 %type <strng> brackets
-%type <strng> basic_data_type
-%type <strng> composite_data_type
+%type <strng> array_var
 
 // functions
 %type <strng> function_header
@@ -125,16 +121,17 @@ input : PROGRAM_START {puts(c_prologue);};
 
 PROGRAM_START: pdeclare {$$ = template("%s",$1);};
 
-pdeclare:       s_main_s {$$ = template("%s",$1);}
-              | constant_declaration s_main_s{$$ = template("%s\n%s",$1,$2);}
-              | constant_declaration composite_declaration s_main_s {$$ = template("%s\n%s\n%s",$1,$2,$3);}
-              | constant_declaration composite_declaration function_declaration s_main_s{$$ = template("%s\n%s\n%s\n%s",$1,$2,$3,$4);}
-              | constant_declaration composite_declaration function_declaration variable_declaration s_main_s{$$ = template("%s\n%s\n%s\n%s\n%s",$1,$2,$3,$4,$5);}
-              //TODO more generalized
-              ;
+pdeclare: code s_main_s code {$$ = template("%s\n%s\n%s",$1,$2,$3);};
+
+code: %empty {$$ = template("\n");}
+    | code constant_declaration   {$$ = template("%s\n%s",$1,$2);}
+    | code function_declaration   {$$ = template("%s\n%s",$1,$2);}
+    | code variable_declaration   {$$ = template("%s\n%s",$1,$2);}
+    ;
+
 
 // <<<<<<<<<<<<<<<<<<<<<<<<< MAIN >>>>>>>>>>>>>>>>>>>>>>>>>>>>
-s_main_s: KW_DEF KW_MAIN '('')' main_body KW_ENDDEF {$$ = template("int main(){\n%s\n}",$5);};
+s_main_s: KW_DEF KW_MAIN '('')' ':' main_body KW_ENDDEF {$$ = template("int main(){\n%s\n}",$6);};
 
 main_body: commands {$$ = $1;};
 
@@ -147,28 +144,27 @@ constant_declaration: KW_CONST TK_IDENTIFIER '=' TK_NUMBER  ':' KW_INTEGER {$$ =
                     | KW_CONST TK_IDENTIFIER '=' KW_FALSE   ':' KW_BOOL    {$$ = template("const int %s = 0;\n;",$2);}
                     ;
 
-composite_declaration: KW_COMP {$$ = template(";\n");};//TODO
 
-function_declaration: KW_DEF function_header function_body KW_ENDDEF {$$ = template("%s{\n%s\n}\n",$2,$3);};//TODO?
+function_declaration: KW_DEF function_header function_body KW_ENDDEF {$$ = template("%s{\n%s\n}\n",$2,$3);};
 
 variable_declaration: TK_IDENTIFIER ':' data_type ';' {$$ = template("%s %s;\n" ,$3,$1);}
-                    | TK_IDENTIFIER ':' data_type ',' variable_declaration {$$ = template("%s %s;\n%s");}
+                    | TK_IDENTIFIER ',' variable_declaration {$$ = template("%s %s;\n%s");}
+                    | array_var
                     ;
+
+
+array_var : TK_IDENTIFIER brackets ':' data_type ';' {$$ = template("%s %s%s;\n" ,$4,$1,$2);};
 
 // ^^^^^^^^^^^^^^^^^^^^^^^ DATA TYPES ^^^^^^^^^^^^^^^^^^^^^^^
 
-data_type : basic_data_type     {$$ = $1;}
-          | composite_data_type {$$ = $1;}
+
+data_type : KW_INTEGER {$$ = template("int");}
+          | KW_BOOL    {$$ = template("int");}
+          | KW_SCALAR  {$$ = template("double");}
+          | KW_STR     {$$ = template("StringType");}
           ;
 
-basic_data_type : KW_INTEGER {$$ = template("int");}
-                | KW_BOOL    {$$ = template("int");}
-                | KW_SCALAR  {$$ = template("double");}
-                | KW_STR     {$$ = template("StringType");}
-                ;
 
-composite_data_type: KW_COMP TK_IDENTIFIER  {$$ = template(";\n");};//TODO
-;
 
 // ----------------------------- expressions -----------------------------
 expression:
@@ -185,7 +181,6 @@ expression:
 | KW_TRUE                                   {$$ = template("1");}
 | KW_FALSE                                  {$$ = template("0");}
 | '(' expression ')'                        {$$ = template("(%s)",$2);}
-| composite_data_type '.' expression        {$$ = template("%s.%s", $1,$3);}
 | math_expression                           {$$ = $1;}
 | logical_expression                        {$$ = $1;}
 | '+' expression                            {$$ = template("+%s", $2);}
@@ -219,8 +214,9 @@ logical_expression:
 // -----------------------------------------------------------------------
 
 // array and elements for arrays or matrices
-brackets : '[' expression ']'           {$$ = template( "[%s]", $2);}
-         | brackets '[' expression ']'  {$$ = template( "%s[%s]", $1, $3);}
+brackets : '[' TK_NUMBER ']'            {$$ = template( "[%s]", $2);}
+         | brackets '[' TK_NUMBER ']'   {$$ = template( "%s[%s]", $1, $3);}
+         | '[' ']'                      {$$ = template( "[]");}
          ;  
 
 
@@ -259,7 +255,7 @@ command:
 variable_assignement: TK_IDENTIFIER '=' expression ';' {$$ = template("%s = %s;\n",$1,$3);};
 
 
-if_statement: KW_IF '(' logical_expression ')' ':' commands KW_ENDIF {$$ = template("if(%s){\n%s\n}\n",$3,$6);}
+if_statement: KW_IF '(' logical_expression ')' ':' commands KW_ENDIF                      {$$ = template("if(%s){\n%s\n}\n",$3,$6);}
             | KW_IF '(' logical_expression ')' ':' commands KW_ELSE ':' commands KW_ENDIF {$$ = template("if(%s){\n%s\n} else{\n%s\n}\n",$3,$6,$9);}
             ;
 
@@ -277,9 +273,9 @@ compound_array_a: TK_IDENTIFIER ASSIGN '[' ']' {$$ = template(";\n");};//TODO
 
 
 //                 COMPOUND ARRAY ON INTEGER VALUES
-//                    $1        $2     $3     $4         $5        $6      $7      $8    $9  $10    $11
-//                  my_array    :=      [ expression    for      element    :  (int) size ]   :     type;
-compound_array_i: TK_IDENTIFIER ASSIGN '[' expression KW_FOR TK_IDENTIFIER ':' TK_NUMBER ']' ':' data_type {$$ = template("%s* %s = (%s*)malloc(%s * sizeof(%s));\nfor(int %s = 0; %s < %s; ++%s){\n%s[%s] = %s;\n}\n",$11,$1,$11,$8,$11,$6,$6,$8,$6,$1,$6,$4);};
+//                    $1        $2     $3     $4         $5        $6      $7     $8      $9  $10    $11
+//                  my_array    :=      [ expression    for      element    :     size     ]   :     type;
+compound_array_i: TK_IDENTIFIER ASSIGN '[' expression KW_FOR TK_IDENTIFIER ':' expression ']' ':' data_type {$$ = template("%s* %s = (%s*)malloc(%s * sizeof(%s));\nfor(int %s = 0; %s < %s; ++%s){\n%s[%s] = %s;\n}\n",$11,$1,$11,$8,$11,$6,$6,$8,$6,$1,$6,$4);};
 
 while_statement: KW_WHILE '(' logical_expression ')' commands KW_ENDWHILE {$$ = template("while(%s){\n%s\n}\n",$3,$5);};
 
@@ -301,6 +297,6 @@ function_body: commands {$$ = template("%s\n",$1);};//TODO?
 %%
 int main () {
   if ( yyparse() == 1 ) {
-    printf("Rejected!\n");
+    printf("at token %s\nRejected!\n",yylval.strng);
   }
 }

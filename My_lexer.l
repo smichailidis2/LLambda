@@ -17,7 +17,7 @@ NUMBER				{DIGIT}+
 DECIMAL				("."{NUMBER})|({NUMBER}("."{NUMBER})?)?
 NONPRINTABLECH		("\\"|"\'"|"\""|"\n")
 REAL				{DECIMAL}([eE][+-]?{NUMBER})?
-CCHAR				[']([a-zA-Z_]|"\n"|"\t"|"\r"|"\\"|"\'"|"\""|"!"|"@"|"#"|"$"|"%"|"^"|"&"|"*"|"?"|":"|"."|"("|")"|"+"|"-"|"^"|"="|"/")[']   	
+CCHAR				[']([a-zA-Z_]|"\\n"|"\\t"|"\\r"|"\\"|"\'"|"\""|"!"|"@"|"#"|"$"|"%"|"^"|"&"|"*"|"?"|":"|"."|"("|")"|"+"|"-"|"^"|"="|"/")[']   	
 SSTRING  			["](^{NONPRINTABLECH})*["]
 
 %%
@@ -43,11 +43,11 @@ continue		return KW_CONTINUE;
 not				return KW_NOT;
 and				return KW_AND;
 or				return KW_OR;
-comp			return KW_COMP;
-endcomp			return KW_ENDCOMP;
 of				return KW_OF;
 mod				return KW_MOD;
 return			return KW_RETURN;
+def				return KW_DEF;
+enddef			return KW_ENDDEF;
 
 main			return KW_MAIN;
 

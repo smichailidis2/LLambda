@@ -82,27 +82,25 @@ extern int yydebug;
     KW_CONTINUE = 283,             /* KW_CONTINUE  */
     KW_AND = 284,                  /* KW_AND  */
     KW_OR = 285,                   /* KW_OR  */
-    KW_COMP = 286,                 /* KW_COMP  */
-    KW_ENDCOMP = 287,              /* KW_ENDCOMP  */
-    KW_OF = 288,                   /* KW_OF  */
-    KW_DEF = 289,                  /* KW_DEF  */
-    KW_ENDDEF = 290,               /* KW_ENDDEF  */
-    ADD_ASSIGN = 291,              /* ADD_ASSIGN  */
-    SUB_ASSIGN = 292,              /* SUB_ASSIGN  */
-    MULT_ASSIGN = 293,             /* MULT_ASSIGN  */
-    DIV_ASSIGN = 294,              /* DIV_ASSIGN  */
-    MOD_ASSIGN = 295,              /* MOD_ASSIGN  */
-    ASSIGN = 296,                  /* ASSIGN  */
-    LOR = 297,                     /* LOR  */
-    LAND = 298,                    /* LAND  */
-    KW_NOT = 299,                  /* KW_NOT  */
-    NEQ = 300,                     /* NEQ  */
-    EQ = 301,                      /* EQ  */
-    LEQ = 302,                     /* LEQ  */
-    GEQ = 303,                     /* GEQ  */
-    MOD = 304,                     /* MOD  */
-    KW_MOD = 305,                  /* KW_MOD  */
-    POW = 306                      /* POW  */
+    KW_OF = 286,                   /* KW_OF  */
+    KW_DEF = 287,                  /* KW_DEF  */
+    KW_ENDDEF = 288,               /* KW_ENDDEF  */
+    ADD_ASSIGN = 289,              /* ADD_ASSIGN  */
+    SUB_ASSIGN = 290,              /* SUB_ASSIGN  */
+    MULT_ASSIGN = 291,             /* MULT_ASSIGN  */
+    DIV_ASSIGN = 292,              /* DIV_ASSIGN  */
+    MOD_ASSIGN = 293,              /* MOD_ASSIGN  */
+    ASSIGN = 294,                  /* ASSIGN  */
+    LOR = 295,                     /* LOR  */
+    LAND = 296,                    /* LAND  */
+    KW_NOT = 297,                  /* KW_NOT  */
+    NEQ = 298,                     /* NEQ  */
+    EQ = 299,                      /* EQ  */
+    LEQ = 300,                     /* LEQ  */
+    GEQ = 301,                     /* GEQ  */
+    MOD = 302,                     /* MOD  */
+    KW_MOD = 303,                  /* KW_MOD  */
+    POW = 304                      /* POW  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -115,7 +113,7 @@ union YYSTYPE
 
   char* strng;
 
-#line 119 "Lambda_analyzer.tab.h"
+#line 117 "Lambda_analyzer.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
