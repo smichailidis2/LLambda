@@ -306,7 +306,7 @@ if_statement: KW_IF '(' expression ')' ':' commands KW_ENDIF                    
 //                $1         $2      $3   $4     $5     $6      $7    $8     $9    $10 $11   $12       $13   $14
 //               for     (int) i     in    [    start    :     stop    :    step     ]   : commands   endfor  ;     (default step = 1)
 for_statement: KW_FOR TK_IDENTIFIER KW_IN '[' expression ':' expression ']' ':' commands KW_ENDFOR  {$$ = template("for(int %s = (%s); %s < (%s); %s++){\n%s\n}\n" ,$2,$5,$2,$7,$2,$10);}
-             | KW_FOR TK_IDENTIFIER KW_IN '[' expression ':' expression ':' expression ']' commands KW_ENDFOR  {$$ = template("for(int %s = (%s); %s < (%s); %s+=(%s)){\n%s\n}\n" ,$2,$5,$2,$7,$2,$9,$11);}
+             | KW_FOR TK_IDENTIFIER KW_IN '[' expression ':' expression ':' expression ']' ':' commands KW_ENDFOR  {$$ = template("for(int %s = (%s); %s < (%s); %s+=(%s)){\n%s\n}\n" ,$2,$5,$2,$7,$2,$9,$12);}
              ;
 
 //                COMPOUND ARRAY ON ARRAY VALUES
