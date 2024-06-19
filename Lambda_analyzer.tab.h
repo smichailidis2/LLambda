@@ -60,29 +60,29 @@ extern int yydebug;
     TK_REAL = 261,                 /* TK_REAL  */
     TK_DIGIT = 262,                /* TK_DIGIT  */
     TK_NUMBER = 263,               /* TK_NUMBER  */
-    TK_DECIMAL = 264,              /* TK_DECIMAL  */
-    KW_MAIN = 265,                 /* KW_MAIN  */
-    KW_INTEGER = 266,              /* KW_INTEGER  */
-    KW_SCALAR = 267,               /* KW_SCALAR  */
-    KW_STR = 268,                  /* KW_STR  */
-    KW_BOOL = 269,                 /* KW_BOOL  */
-    KW_TRUE = 270,                 /* KW_TRUE  */
-    KW_FALSE = 271,                /* KW_FALSE  */
-    KW_CONST = 272,                /* KW_CONST  */
-    KW_IF = 273,                   /* KW_IF  */
-    KW_ELSE = 274,                 /* KW_ELSE  */
-    KW_ENDIF = 275,                /* KW_ENDIF  */
-    KW_FOR = 276,                  /* KW_FOR  */
-    KW_IN = 277,                   /* KW_IN  */
-    KW_ENDFOR = 278,               /* KW_ENDFOR  */
-    KW_WHILE = 279,                /* KW_WHILE  */
-    KW_ENDWHILE = 280,             /* KW_ENDWHILE  */
-    KW_BREAK = 281,                /* KW_BREAK  */
-    KW_RETURN = 282,               /* KW_RETURN  */
-    KW_CONTINUE = 283,             /* KW_CONTINUE  */
-    KW_AND = 284,                  /* KW_AND  */
-    KW_OR = 285,                   /* KW_OR  */
-    KW_OF = 286,                   /* KW_OF  */
+    KW_MAIN = 264,                 /* KW_MAIN  */
+    KW_INTEGER = 265,              /* KW_INTEGER  */
+    KW_SCALAR = 266,               /* KW_SCALAR  */
+    KW_STR = 267,                  /* KW_STR  */
+    KW_BOOL = 268,                 /* KW_BOOL  */
+    KW_TRUE = 269,                 /* KW_TRUE  */
+    KW_FALSE = 270,                /* KW_FALSE  */
+    KW_CONST = 271,                /* KW_CONST  */
+    KW_IF = 272,                   /* KW_IF  */
+    KW_ELSE = 273,                 /* KW_ELSE  */
+    KW_ENDIF = 274,                /* KW_ENDIF  */
+    KW_FOR = 275,                  /* KW_FOR  */
+    KW_IN = 276,                   /* KW_IN  */
+    KW_ENDFOR = 277,               /* KW_ENDFOR  */
+    KW_WHILE = 278,                /* KW_WHILE  */
+    KW_ENDWHILE = 279,             /* KW_ENDWHILE  */
+    KW_BREAK = 280,                /* KW_BREAK  */
+    KW_RETURN = 281,               /* KW_RETURN  */
+    KW_CONTINUE = 282,             /* KW_CONTINUE  */
+    KW_AND = 283,                  /* KW_AND  */
+    KW_OR = 284,                   /* KW_OR  */
+    KW_OF = 285,                   /* KW_OF  */
+    KW_VOID = 286,                 /* KW_VOID  */
     KW_DEF = 287,                  /* KW_DEF  */
     KW_ENDDEF = 288,               /* KW_ENDDEF  */
     ADD_ASSIGN = 289,              /* ADD_ASSIGN  */
@@ -91,16 +91,17 @@ extern int yydebug;
     DIV_ASSIGN = 292,              /* DIV_ASSIGN  */
     MOD_ASSIGN = 293,              /* MOD_ASSIGN  */
     ASSIGN = 294,                  /* ASSIGN  */
-    LOR = 295,                     /* LOR  */
-    LAND = 296,                    /* LAND  */
-    KW_NOT = 297,                  /* KW_NOT  */
-    NEQ = 298,                     /* NEQ  */
-    EQ = 299,                      /* EQ  */
-    LEQ = 300,                     /* LEQ  */
-    GEQ = 301,                     /* GEQ  */
-    MOD = 302,                     /* MOD  */
-    KW_MOD = 303,                  /* KW_MOD  */
-    POW = 304                      /* POW  */
+    SIMPLE_ASSIGN = 295,           /* SIMPLE_ASSIGN  */
+    LOR = 296,                     /* LOR  */
+    LAND = 297,                    /* LAND  */
+    KW_NOT = 298,                  /* KW_NOT  */
+    NEQ = 299,                     /* NEQ  */
+    EQ = 300,                      /* EQ  */
+    LEQ = 301,                     /* LEQ  */
+    GEQ = 302,                     /* GEQ  */
+    MOD = 303,                     /* MOD  */
+    KW_MOD = 304,                  /* KW_MOD  */
+    POW = 305                      /* POW  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -109,11 +110,11 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 20 "Lambda_analyzer.y"
+#line 58 "Lambda_analyzer.y"
 
   char* strng;
 
-#line 117 "Lambda_analyzer.tab.h"
+#line 118 "Lambda_analyzer.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

@@ -4,4 +4,3 @@ default: cgen.c Lambda_analyzer.y My_lexer.l;
 	@gcc -o MyCompiler lex.yy.c Lambda_analyzer.tab.c cgen.c -lfl
 
 
-

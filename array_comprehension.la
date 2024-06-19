@@ -6,7 +6,7 @@ a[100]: integer;
 
 def main(): 
 
-  for i in [0:N]:
+  for i in [100:N]:
     a[i] = i;
   endfor;
 
